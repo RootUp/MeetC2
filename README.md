@@ -11,7 +11,7 @@ Domain's utlized here are "`oauth2.googleapis.com`" & "`www.googleapis.com`". On
 When the organizer wants to issue a new command they can `POST` a new event to the same Calendar API endpoint via "organizer" agent with the command embedded in the event's summary field, like "Meeting from nobody:". The "guest" agent identifies these command events during its regular polling which extracts and executes the command locally, then updates the same event via a `PUT` request to include the command output within the `[OUTPUT] [/OUTPUT]` parameter in the description field.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/8a1929c6-3090-45cd-8f82-c33673c0fb91" alt="image" width="500"/>
+<img alt="image" src="https://github.com/user-attachments/assets/c9dd3c71-b5e8-4170-a526-a08461c064fc" width="500"/>
 </p>
 
 ### Google Calendar Setup
