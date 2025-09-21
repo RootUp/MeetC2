@@ -23,6 +23,14 @@ When the organizer wants to issue a new command they can `POST` a new event to t
 - Navigate to the URL "`https://calendar.google.com`", on the left side find "Other calendars" → Click the "+" click on create new calender fill in the name/description. Post that, click on the 3 dots next to it → "Settings and sharing". Scroll down to "Integrate calendar", check for "Calendar ID" it should look like "`abc123xyz@group.calendar.google.com`".
 - Final steps, under calendar settings, find "Share with specific people" click on "+ Add people", add the service account email from step 4 above (the one ending in `@your-project.iam.gserviceaccount.com`). Change the permission to "Make changes to events" and click "Send", and you are all set...
 
+### YouTube
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=YkKtQ3Ex8-Q" target="_blank">
+    <img src="https://img.youtube.com/vi/YkKtQ3Ex8-Q/0.jpg" alt="Watch on YouTube" title="Watch on YouTube" width="560" />
+  </a>
+</div>
+
 ### Command Line
 
 <b>Compile:</b>
